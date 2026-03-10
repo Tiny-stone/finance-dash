@@ -1,10 +1,17 @@
-// Cloudflare Worker - 财经日报 API
+// Cloudflare Worker - 财经日报 API + 前端静态资源
 // 替代原来的 FastAPI 后端
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
+
+    // 前端静态资源请求（ASSETS binding 自动处理）
+    if (path === '/' || path === '/index.html' || !path.startsWith('/api/')) {
+      if (env.ASSETS) {
+        return env.ASSETS.fetch(request);
+      }
+    }
 
     // CORS 处理
     const corsHeaders = {
