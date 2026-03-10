@@ -1,0 +1,23 @@
+[Unit]
+Description=Finance Dash - 全球市场财经日报系统
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/.openclaw/workspace/finance-dash
+Environment="PYTHONPATH=/root/.openclaw/workspace/finance-dash"
+ExecStart=/usr/bin/python3 -c \
+    "import sys; \
+    sys.path.insert(0, '/root/.openclaw/workspace/finance-dash'); \
+    sys.path.insert(0, '/root/.openclaw/workspace/finance-dash/database'); \
+    sys.path.insert(0, '/root/.openclaw/workspace/finance-dash/backend'); \
+    from scheduler.tasks import start_scheduler; \
+    start_scheduler()"
+Restart=always
+RestartSec=10
+StandardOutput=append:/root/.openclaw/workspace/finance-dash/logs/scheduler.log
+StandardError=append:/root/.openclaw/workspace/finance-dash/logs/scheduler.log
+
+[Install]
+WantedBy=multi-user.target

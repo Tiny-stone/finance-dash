@@ -1,0 +1,14 @@
+{
+  "name": "finance-dash",
+  "version": "2.0.0",
+  "description": "全球市场财经日报系统 - Cloudflare 全栈版",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute finance-dash-db --local --file=worker/schema.sql",
+    "db:prod:init": "wrangler d1 execute finance-dash-db --file=worker/schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

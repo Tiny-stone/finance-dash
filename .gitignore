@@ -1,0 +1,22 @@
+# Node modules
+node_modules/
+
+# 日志
+logs/
+*.log
+
+# 数据库
+database/*.db
+*.db
+
+# 环境配置
+.env
+.env.local
+.wrangler/
+
+# PID 文件
+*.pid
+
+# 临时文件
+tmp/
+.cache/
