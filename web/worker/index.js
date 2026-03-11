@@ -367,7 +367,8 @@ const FRONTEND_HTML = `<!DOCTYPE html>
     </div>
     
     <script>
-        const API_BASE = window.location.origin;
+        // API 地址配置
+        const API_BASE = window.ENV_API_BASE || 'https://finance-dash-api.your-account.workers.dev';
         let currentDate = new Date().toISOString().split('T')[0];
         let currentType = 'daily';
         let currentReport = null;
@@ -432,7 +433,7 @@ const FRONTEND_HTML = `<!DOCTYPE html>
             reportSection.style.display = 'none';
             
             try {
-                const response = await fetch(`${API_BASE}/api/reports?date=${currentDate}&report_type=${currentType}`);
+                const response = await fetch(\`\${API_BASE}/api/reports?date=\${currentDate}&report_type=\${currentType}\`);
                 
                 if (!response.ok) {
                     throw new Error('加载失败');
@@ -452,7 +453,198 @@ const FRONTEND_HTML = `<!DOCTYPE html>
                 
             } catch (err) {
                 loadingState.style.display = 'none';
-                errorBox.textContent = `加载失败：${err.message}`;
+                errorBox.textContent = \`加载失败：\${err.message}\`;
+                errorBox.style.display = 'block';
+            }
+        }
+        
+        // Render report data
+        function renderReport(report) {
+            const hotSummarySection = document.getElementById('hotSummarySection');
+            const marketDataSection = document.getElementById('marketDataSection');
+            const reportSection = document.getElementById('reportSection');
+            
+            // Hot summary
+            if (report.hot_summary) {
+                document.getElementById('hotSummaryContent').textContent = report.hot_summary;
+                hotSummarySection.style.display = 'block';
+            }
+            
+            // Parse metadata
+            let metadata = {};
+            try {
+                metadata = JSON.parse(report.metadata || '{}');
+            } catch (e) {}
+            
+            // Render indices
+            if (metadata.indices && metadata.indices.length > 0) {
+                renderIndices(metadata.indices);
+                marketDataSection.style.display = 'block';
+            }
+            
+            // Render stats
+            if (metadata.market_stats) {
+                renderStats(metadata.market_stats);
+            }
+            
+            // Render watchlist
+            if (metadata.watchlist && metadata.watchlist.length > 0) {
+                renderWatchlist(metadata.watchlist);
+            }
+            
+            // Render report content
+            if (report.content) {
+                document.getElementById('reportContent').innerHTML = formatContent(report.content);
+                reportSection.style.display = 'block';
+            }
+            
+            // Update last update time
+            document.getElementById('lastUpdate').textContent = new Date(report.created_at).toLocaleString('zh-CN');
+        }
+        
+        function renderIndices(indices) {
+            const grid = document.getElementById('indicesGrid');
+            grid.innerHTML = indices.map(idx => {
+                const changeClass = idx.change > 0 ? 'up' : idx.change < 0 ? 'down' : 'flat';
+                const changeSign = idx.change > 0 ? '+' : '';
+                return \`
+                    <div class="index-item">
+                        <div class="index-name">\${idx.name}</div>
+                        <div class="index-value \${changeClass}">\${idx.value}</div>
+                        <div class="index-change \${changeClass}">\${changeSign}\${idx.change}%</div>
+                    </div>
+                \`;
+            }).join('');
+        }
+        
+        function renderStats(stats) {
+            const grid = document.getElementById('statsGrid');
+            const total = stats.up + stats.down + stats.flat;
+            grid.innerHTML = \`
+                <div class="stat-item">
+                    <div class="stat-label">上涨</div>
+                    <div class="stat-value up">\${stats.up || 0}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">下跌</div>
+                    <div class="stat-value down">\${stats.down || 0}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">涨停</div>
+                    <div class="stat-value up">\${stats.limit_up || 0}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">跌停</div>
+                    <div class="stat-value down">\${stats.limit_down || 0}</div>
+                </div>
+            \`;
+        }
+        
+        function renderWatchlist(stocks) {
+            const container = document.getElementById('watchlist');
+            document.getElementById('watchlistCard').style.display = 'block';
+            container.innerHTML = stocks.map(stock => {
+                const changeClass = stock.change > 0 ? 'up' : stock.change < 0 ? 'down' : 'flat';
+                const changeSign = stock.change > 0 ? '+' : '';
+                return \`
+                    <div class="stock-item">
+                        <div class="stock-info">
+                            <div class="stock-name">\${stock.name}</div>
+                            <div class="stock-code">\${stock.code}</div>
+                        </div>
+                        <div class="stock-price">
+                            <div class="stock-current \${changeClass}">\${stock.price}</div>
+                            <div class="stock-change \${changeClass}">\${changeSign}\${stock.change}%</div>
+                        </div>
+                    </div>
+                \`;
+            }).join('');
+        }
+        
+        function formatContent(content) {
+            // Simple markdown-like formatting
+            return content
+                .replace(/^### (.+)\$/gm, '<h3>\$1</h3>')
+                .replace(/^## (.+)\$/gm, '<h3>\$1</h3>')
+                .replace(/^# (.+)\$/gm, '<h3>\$1</h3>')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+        }
+        
+        // Load history - 获取最近7天的报告
+        async function loadHistory() {
+            try {
+                // 计算最近7天的日期范围
+                const dates = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    dates.push(d.toISOString().split('T')[0]);
+                }
+                
+                // 获取最近7天的所有报告
+                const response = await fetch(\`\${API_BASE}/api/reports?limit=50\`);
+                if (!response.ok) throw new Error('加载历史失败');
+                
+                const data = await response.json();
+                renderHistory(data.data || [], dates);
+            } catch (err) {
+                console.error('History load error:', err);
+            }
+        }
+        
+        function renderHistory(reports, recentDates) {
+            const list = document.getElementById('historyList');
+            
+            if (reports.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">暂无历史记录</div>';
+                return;
+            }
+            
+            // Group by date
+            const byDate = {};
+            reports.forEach(r => {
+                if (!byDate[r.report_date]) byDate[r.report_date] = [];
+                byDate[r.report_date].push(r);
+            });
+            
+            // 使用最近7天的日期，优先显示有数据的日期
+            const sortedDates = recentDates.filter(date => byDate[date]).sort().reverse();
+            
+            list.innerHTML = sortedDates.map(date => {
+                const dayReports = byDate[date];
+                const types = dayReports.map(r => r.report_type);
+                const isToday = date === currentDate;
+                
+                return \`
+                    <div class="history-item \${isToday ? 'active' : ''}" onclick="goToDate('\${date}')">
+                        <div class="history-date">\${formatDate(date)}</div>
+                        <div class="history-types">
+                            \${types.includes('premarket') ? '<span class="type-badge premarket">盘前</span>' : ''}
+                            \${types.includes('noon') ? '<span class="type-badge noon">午间</span>' : ''}
+                            \${types.includes('daily') ? '<span class="type-badge daily">全天</span>' : ''}
+                        </div>
+                    </div>
+                \`;
+            }).join('');
+        }
+        
+        function goToDate(date) {
+            currentDate = date;
+            document.getElementById('datePicker').value = date;
+            updateDateDisplay();
+            loadReport();
+            loadHistory();
+        }
+        
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
+        }
+    </script>
+</body>
+</html>
+`;
                 errorBox.style.display = 'block';
             }
         }

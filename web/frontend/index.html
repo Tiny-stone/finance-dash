@@ -526,12 +526,12 @@
                     <div class="stat-value down">${stats.down || 0}</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">平盘</div>
-                    <div class="stat-value">${stats.flat || 0}</div>
+                    <div class="stat-label">涨停</div>
+                    <div class="stat-value up">${stats.limit_up || 0}</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-label">涨跌比</div>
-                    <div class="stat-value">${total > 0 ? ((stats.up/total)*100).toFixed(1) : 0}%</div>
+                    <div class="stat-label">跌停</div>
+                    <div class="stat-value down">${stats.limit_down || 0}</div>
                 </div>
             `;
         }
@@ -567,20 +567,29 @@
                 .replace(/\n/g, '<br>');
         }
         
-        // Load history
+        // Load history - 获取最近7天的报告
         async function loadHistory() {
             try {
-                const response = await fetch(`${API_BASE}/api/reports/by-date/${currentDate}`);
+                // 计算最近7天的日期范围
+                const dates = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    dates.push(d.toISOString().split('T')[0]);
+                }
+                
+                // 获取最近7天的所有报告
+                const response = await fetch(`${API_BASE}/api/reports?limit=50`);
                 if (!response.ok) throw new Error('加载历史失败');
                 
                 const data = await response.json();
-                renderHistory(data.data || []);
+                renderHistory(data.data || [], dates);
             } catch (err) {
                 console.error('History load error:', err);
             }
         }
         
-        function renderHistory(reports) {
+        function renderHistory(reports, recentDates) {
             const list = document.getElementById('historyList');
             
             if (reports.length === 0) {
@@ -595,7 +604,8 @@
                 byDate[r.report_date].push(r);
             });
             
-            const sortedDates = Object.keys(byDate).sort().reverse().slice(0, 7);
+            // 使用最近7天的日期，优先显示有数据的日期
+            const sortedDates = recentDates.filter(date => byDate[date]).sort().reverse();
             
             list.innerHTML = sortedDates.map(date => {
                 const dayReports = byDate[date];
