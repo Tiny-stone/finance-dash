@@ -175,8 +175,10 @@
     <button class="refresh-btn" onclick="loadReport()" title="刷新">↻</button>
     
     <script>
-        // 支持环境变量配置 API 地址（Cloudflare Pages 部署时用）
-        const API_BASE = window.ENV_API_BASE || window.location.origin || 'http://localhost:8000';
+        // API 地址配置
+        // 优先从环境变量读取（Cloudflare Pages 部署时通过 _worker.js 注入）
+        // 本地开发时使用默认值
+        const API_BASE = window.ENV_API_BASE || 'https://finance-dash-api.your-account.workers.dev';
         let currentType = 'daily';
         
         // 设置当前日期

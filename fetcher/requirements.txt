@@ -1,0 +1,14 @@
+# Finance Dash 抓取服务依赖
+# Python 3.8+
+
+# 数据抓取
+akshare>=1.11.0
+yfinance>=0.2.28
+pandas>=2.0.0
+numpy>=1.24.0
+
+# HTTP 请求
+requests>=2.31.0
+
+# 工具
+python-dotenv>=1.0.0

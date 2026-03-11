@@ -1,0 +1,14 @@
+{
+  "name": "finance-dash-web",
+  "version": "2.0.0",
+  "description": "Finance Dash 前端 - Cloudflare Pages 部署",
+  "private": true,
+  "scripts": {
+    "dev": "npx wrangler pages dev frontend --port 3000",
+    "deploy": "npx wrangler pages deploy frontend --project-name=finance-dash",
+    "preview": "npx wrangler pages dev frontend"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
