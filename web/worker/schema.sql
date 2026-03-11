@@ -4,9 +4,10 @@
 CREATE TABLE IF NOT EXISTS daily_reports (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     report_date TEXT NOT NULL,
-    report_type TEXT NOT NULL,  -- 'noon' 或 'daily'
+    report_type TEXT NOT NULL,  -- 'premarket', 'noon', 'daily'
     content TEXT NOT NULL,
     summary TEXT,
+    hot_summary TEXT,           -- 新增：AI生成的市场热点总结（3-5句话）
     metadata TEXT,  -- JSON 格式存储额外数据
     created_at TEXT NOT NULL,
     updated_at TEXT

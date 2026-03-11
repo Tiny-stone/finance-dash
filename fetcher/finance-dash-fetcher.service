@@ -1,0 +1,29 @@
+[Unit]
+Description=Finance Dash 抓取服务
+Documentation=https://github.com/your-username/finance-dash
+After=network.target
+
+[Service]
+Type=simple
+User=%I
+WorkingDirectory=/opt/finance-dash/fetcher
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/opt/finance-dash/fetcher/.env
+
+# 执行命令
+ExecStart=/usr/bin/python3 /opt/finance-dash/fetcher/main.py all
+
+# 重启策略
+Restart=on-failure
+RestartSec=60
+
+# 日志输出
+StandardOutput=append:/var/log/finance-dash/fetcher.log
+StandardError=append:/var/log/finance-dash/fetcher-error.log
+
+# 资源限制
+# MemoryLimit=512M
+# CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target
